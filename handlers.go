@@ -1,54 +1,68 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"golang.org/x/exp/slices"
 )
 
-func GetItems(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(items)
+func GetItems(c *gin.Context) {
+	c.JSON(http.StatusOK, items)
 }
 
-func AddItem(w http.ResponseWriter, r *http.Request) {
+func AddItem(c *gin.Context) {
 	var newItem Item
+	if err := c.ShouldBindJSON(&newItem); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
-	json.NewDecoder(r.Body).Decode(&newItem) // Tre sa trimit referinta.
+		return
+	}
+
 	newItem.ID = uuid.New().String()
 	items = append(items, newItem)
 
-	json.NewEncoder(w).Encode(newItem)
+	c.JSON(http.StatusOK, newItem)
 }
 
-func UpdateItem(w http.ResponseWriter, r *http.Request) {
+func UpdateItem(c *gin.Context) {
 	var updatedItem Item
+	if err := c.ShouldBindJSON(&updatedItem); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
-	json.NewDecoder(r.Body).Decode(&updatedItem)
-	for i, item := range items {
-		if item.ID == updatedItem.ID {
-			items[i].Name = updatedItem.Name
-
-			json.NewEncoder(w).Encode(updatedItem)
-			return
-		}
+		return
 	}
 
-	http.Error(w, "Item not found", http.StatusNotFound)
+	idx := slices.IndexFunc(items, func(i Item) bool {
+		return i.ID == updatedItem.ID
+	})
+	if idx == -1 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
+
+		return
+	}
+
+	items[idx].Name = updatedItem.Name
+
+	c.JSON(http.StatusOK, updatedItem)
 }
 
-func DeleteItem(w http.ResponseWriter, r *http.Request) {
+func DeleteItem(c *gin.Context) {
 	var toDelete Item
+	if err := c.ShouldBindJSON(&toDelete); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
-	json.NewDecoder(r.Body).Decode(&toDelete)
+		return
+	}
 	for i, item := range items {
 		if item.ID == toDelete.ID {
-			items = append(items[:i], items[i+1:]...) // (...) Trateze slice-ul items[i+1:] ca o lista de argumente separate.
+			items = append(items[:i], items[i+1:]...)
 
-			w.WriteHeader(http.StatusNoContent)
+			c.Status(http.StatusNoContent)
 			return
 		}
 	}
 
-	http.Error(w, "Item not found", http.StatusNotFound)
+	c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
 }

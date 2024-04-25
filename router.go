@@ -1,15 +1,12 @@
 package main
 
 import (
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 )
 
-func NewServer() *mux.Router {
-	router := mux.NewRouter()
-	router.HandleFunc("/items", GetItems).Methods("GET")
-	router.HandleFunc("/item", AddItem).Methods("POST")
-	router.HandleFunc("/item", UpdateItem).Methods("PUT")
-	router.HandleFunc("/item", DeleteItem).Methods("DELETE")
-
-	return router
+func initializeRoutes(router *gin.Engine) {
+	router.GET("/items", GetItems)
+	router.POST("/item", AddItem)
+	router.PUT("/item", UpdateItem)
+	router.DELETE("/item", DeleteItem)
 }

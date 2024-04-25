@@ -2,10 +2,12 @@ package main
 
 import (
 	"log"
-	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	server := NewServer()
-	log.Fatal(http.ListenAndServe(":8080", server))
+	router := gin.Default()
+	initializeRoutes(router)
+	log.Fatal(router.Run(":8080"))
 }
